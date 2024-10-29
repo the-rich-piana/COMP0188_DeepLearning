@@ -1,0 +1,28 @@
+# Ignore all data directories
+data/
+**/data/
+**/__MACOSX/
+test/
+train/
+val/
+
+# Ignore .env file since I see it in your project
+.env
+
+# Python-related files that should typically be ignored
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+.env/
+ENV/
+
+# Since I see .cpython files, adding compiled Python files
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.cpython-*
