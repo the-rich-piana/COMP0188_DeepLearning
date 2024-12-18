@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Dict, Optional
 import seaborn as sns
+import torch
 
 class VAELossPlotter:
     def __init__(self):
@@ -104,33 +105,52 @@ class VAELossPlotter:
         plt.tight_layout()
         plt.show()
 
-    def plot_loss_distributions(self, figsize: tuple = (12, 6)):
-        """Plot the distribution of loss values using violin plots."""
-        plt.figure(figsize=figsize)
-        
-        # Prepare data for plotting
-        data = []
-        labels = []
-        categories = []
-        
-        for loss_type in ['total_loss', 'reconstruction_loss_img', 
-                         'reconstruction_loss_num', 'kl_loss']:
-            train_losses = self.epoch_losses[loss_type]
-            data.extend(train_losses)
-            labels.extend(['Train'] * len(train_losses))
-            categories.extend([loss_type] * len(train_losses))
+
+def analyze_dataloader(dataloader, num_batches=5):
+    """
+    Analyze the first few batches of data to check for NaNs, zeros, and value ranges
+    """
+    print("\nDataLoader Analysis:")
+    print("-------------------")
+
+    for batch_idx, batch in enumerate(dataloader):
+        if batch_idx >= num_batches:
+            break
             
-            if len(self.val_losses[loss_type]) > 0:
-                val_losses = self.val_losses[loss_type]
-                data.extend(val_losses)
-                labels.extend(['Validation'] * len(val_losses))
-                categories.extend([loss_type] * len(val_losses))
+        print(f"\nBatch {batch_idx + 1}:")
         
-        # Create violin plot
-        sns.violinplot(x=categories, y=data, hue=labels)
-        plt.xticks(rotation=45)
-        plt.title('Distribution of Loss Components')
-        plt.xlabel('Loss Component')
-        plt.ylabel('Loss Value')
-        plt.tight_layout()
-        plt.show()
+        # Analyze images
+        images = batch.input["images"]
+        print("\nImages:")
+        print(f"Shape: {images.shape}")
+        print(f"Type: {images.dtype}")
+        print(f"Range: [{images.min().item():.3f}, {images.max().item():.3f}]")
+        print(f"Mean: {images.mean().item():.3f}")
+        print(f"NaN count: {torch.isnan(images).sum().item()}")
+        print(f"Zero count: {(images == 0).sum().item()}")
+        
+        # Analyze numerical observations
+        obs_types = ["ee_cartesian_pos_ob", "ee_cartesian_vel_ob", "joint_pos_ob"]
+        
+        for obs_type in obs_types:
+            if obs_type in batch.input:
+                obs = batch.input[obs_type]
+                print(f"\n{obs_type}:")
+                print(f"Shape: {obs.shape}")
+                print(f"Type: {obs.dtype}")
+                print(f"Range: [{obs.min().item():.3f}, {obs.max().item():.3f}]")
+                print(f"Mean: {obs.mean().item():.3f}")
+                print(f"NaN count: {torch.isnan(obs).sum().item()}")
+                print(f"Zero count: {(obs == 0).sum().item()}")
+                
+                # Show histogram of values
+                if batch_idx == 0:
+                    plt.figure(figsize=(10, 4))
+                    plt.hist(obs.numpy().flatten(), bins=50)
+                    plt.title(f'Distribution of {obs_type} values')
+                    plt.xlabel('Value')
+                    plt.ylabel('Count')
+                    plt.show()
+
+    print("\nDataLoader Analysis Complete")
+    print("-------------------------")
