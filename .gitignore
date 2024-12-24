@@ -24,3 +24,5 @@ ENV/
 *.pyd
 .Python
 *.cpython-*
+
+*.csv
